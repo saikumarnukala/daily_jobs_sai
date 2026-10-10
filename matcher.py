@@ -13,42 +13,65 @@ Location:
 import re
 from config import PROFILE, MIN_SCORE_THRESHOLD
 
-def is_remote_india_or_worldwide(location: str) -> bool:
+REMOTE_BOARDS = ["remotive", "remoteok", "jobicy", "weworkremotely", "arbeitnow"]
+REMOTE_COMPANIES = ["gitlab", "zapier", "automattic", "buffer", "duckduckgo", "elastic", "canonical", "grafana labs", "grafanalabs"]
+
+def is_remote_india_or_worldwide(location: str, title: str = "", description: str = "", is_remote: bool = False, source: str = "") -> bool:
     """
     Validates whether candidate in India can work remotely for this role.
-    Allowed:
-      - Explicitly in India (e.g. Bengaluru, Bangalore, Remote India, etc.)
-      - Worldwide / Anywhere / Global / Work from anywhere
-      - Generic 'Remote' without foreign country exclusions
+    Strictly Enforces:
+      1. MUST BE 100% REMOTE:
+         - Remote board or 100% remote company
+         - Contains 'remote', 'work from home', 'wfh', 'worldwide', 'anywhere', 'virtual'
+         - Strictly rejects on-site or hybrid office jobs (e.g., 'Bengaluru, India' without remote).
+      2. MUST ALLOW CANDIDATE IN INDIA:
+         - Explicitly in India Remote (e.g. Remote India, Bengaluru Remote, etc.)
+         - Worldwide / Anywhere / Global / Work from anywhere
+         - Generic 'Remote' without foreign country exclusions
     Rejected:
+      - On-site / hybrid office roles
       - Country-locked to US, Canada, UK, Europe, Australia, etc.
     """
-    if not location:
-        return True
-    loc_clean = location.lower().strip()
+    loc_clean = (location or "").lower().strip()
+    title_clean = (title or "").lower().strip()
+    desc_clean = (description or "")[:500].lower()
+    source_clean = (source or "").lower()
 
+    # Reject explicitly office-based / on-site roles
+    if any(obs in loc_clean for obs in ["office based", "on-site", "onsite", "in-office"]):
+        if not any(rem in loc_clean for rem in ["home based", "remote", "wfh", "anywhere", "worldwide"]):
+            return False
+
+    # 1. FIRST GATE: Verify the role is strictly REMOTE
+    is_remote_role = False
+    if is_remote and not any(obs in loc_clean for obs in ["office based", "on-site", "onsite", "in-office"]):
+        is_remote_role = True
+    elif any(rb in source_clean for rb in REMOTE_BOARDS):
+        is_remote_role = True
+    elif any(term in loc_clean for term in ["remote", "home based", "work from home", "wfh", "anywhere", "worldwide", "virtual", "telecommute"]):
+        is_remote_role = True
+    elif any(term in title_clean for term in ["remote", "wfh", "work from home"]):
+        is_remote_role = True
+    elif any(term in desc_clean for term in ["100% remote", "fully remote", "work from home", "remote position", "remote role"]):
+        is_remote_role = True
+    elif any(rc in source_clean for rc in REMOTE_COMPANIES) and not any(obs in loc_clean for obs in ["office based", "on-site"]):
+        is_remote_role = True
+
+    if not is_remote_role:
+        return False  # Strictly reject on-site / office-only jobs
+
+    # 2. SECOND GATE: Verify India eligibility (India remote or Worldwide remote)
     rules = PROFILE.get("location_rules", {})
     india_indicators = rules.get("india_indicators", [])
     worldwide_indicators = rules.get("worldwide_indicators", [])
     foreign_restricted = rules.get("foreign_restricted", [])
 
-    # 1. India specific locations
-    if any(t in loc_clean for t in india_indicators):
-        return True
-
-    # 2. Worldwide / Global
-    if any(t in loc_clean for t in worldwide_indicators):
-        return True
-
-    # 3. Open 'Remote' without foreign restrictions
-    if loc_clean in ["remote", "any", "all", "work from home"]:
-        return True
-
-    # 4. If it mentions foreign regions, reject unless worldwide/India was found
+    # If it is restricted to foreign countries and does not mention India or Worldwide, reject
     if any(r in loc_clean for r in foreign_restricted):
-        return False
+        if not (any(i in loc_clean for i in india_indicators) or any(w in loc_clean for w in worldwide_indicators)):
+            return False
 
-    return False
+    return True
 
 def is_title_in_scope(title: str) -> tuple[bool, str]:
     """
@@ -105,7 +128,7 @@ def is_title_in_scope(title: str) -> tuple[bool, str]:
 
     return False, ""
 
-def evaluate_job(title: str, description: str, location: str, tags: list = None) -> dict:
+def evaluate_job(title: str, description: str, location: str, tags: list = None, is_remote: bool = False, source: str = "") -> dict:
     """
     Evaluates a job and returns scoring details:
     {
@@ -122,8 +145,14 @@ def evaluate_job(title: str, description: str, location: str, tags: list = None)
     tags_str = " ".join([str(t).lower() for t in (tags or [])])
     full_text = f"{title_lower} {tags_str} {desc_lower}"
 
-    # 1. Location Eligibility Filter (India or Worldwide Remote)
-    location_ok = is_remote_india_or_worldwide(location)
+    # 1. Location Eligibility Filter (STRICT 100% Remote: India or Worldwide)
+    location_ok = is_remote_india_or_worldwide(
+        location=location,
+        title=title,
+        description=description,
+        is_remote=is_remote,
+        source=source
+    )
     if not location_ok:
         return {"eligible": False, "match_score": 0, "location_ok": False}
 

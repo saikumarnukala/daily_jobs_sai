@@ -102,7 +102,10 @@ PROFILE = {
             "latin america", "brazil", "australia", "japan", "california", 
             "new york", "texas", "los angeles", "dallas", "toronto", "london",
             "berlin", "paris", "lisboa", "portugal", "austria", "wien", "mexico",
-            "ireland", "dublin", "singapore", "kuala lumpur", "malaysia", "msida"
+            "ireland", "dublin", "singapore", "kuala lumpur", "malaysia", "msida",
+            "china", "beijing", "taiwan", "taipei", "hong kong", "tokyo", "korea", "seoul",
+            "switzerland", "sweden", "norway", "denmark", "finland", "czech", "israel",
+            "new zealand", "auckland", "sydney", "melbourne"
         ]
     }
 }
@@ -117,10 +120,13 @@ GREENHOUSE_BOARDS = [
     {"company": "dbt Labs", "slug": "dbtlabs"},
     {"company": "Starburst", "slug": "starburst"},
     {"company": "MongoDB", "slug": "mongodb"},
+    {"company": "Canonical", "slug": "canonical"},
+    {"company": "Grafana Labs", "slug": "grafanalabs"},
 ]
 
-# Remote Job Board APIs
+# Remote Job Board APIs & Scrapers
 API_SOURCES = {
+    "jobspy": True,
     "remotive": True,
     "remoteok": True,
     "jobicy": True,

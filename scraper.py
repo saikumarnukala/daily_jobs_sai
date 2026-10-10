@@ -56,7 +56,8 @@ def fetch_remotive() -> list:
                     "url": j.get("url", ""),
                     "description": clean_html(j.get("description", "")),
                     "tags": j.get("tags", []),
-                    "date_posted": j.get("publication_date", "")
+                    "date_posted": j.get("publication_date", ""),
+                    "is_remote": True
                 })
     return results
 
@@ -78,7 +79,8 @@ def fetch_remoteok() -> list:
                         "url": j.get("url", ""),
                         "description": clean_html(j.get("description", "")),
                         "tags": j.get("tags", []),
-                        "date_posted": j.get("date", "")
+                        "date_posted": j.get("date", ""),
+                        "is_remote": True
                     })
     return results
 
@@ -98,7 +100,8 @@ def fetch_jobicy() -> list:
                     "url": j.get("url", ""),
                     "description": clean_html(j.get("jobDescription", "")),
                     "tags": j.get("jobIndustry", []),
-                    "date_posted": j.get("pubDate", "")
+                    "date_posted": j.get("pubDate", ""),
+                    "is_remote": True
                 })
     return results
 
@@ -139,14 +142,74 @@ def fetch_weworkremotely() -> list:
                             "url": link,
                             "description": desc,
                             "tags": [],
-                            "date_posted": pub
+                            "date_posted": pub,
+                            "is_remote": True
                         })
         except Exception:
             pass
     return results
 
+def fetch_jobspy_remote() -> list:
+    """
+    Scrapes real-time remote jobs from LinkedIn using JobSpy.
+    Focuses specifically on Saikumar's remote search criteria:
+      - 'ETL QA Remote'
+      - 'Data Quality Remote'
+      - 'SDET Remote'
+      - 'Database QA Remote'
+    """
+    results = []
+    try:
+        from jobspy import scrape_jobs
+    except ImportError:
+        return results
+
+    queries = [
+        "ETL QA Remote",
+        "Data Quality Remote",
+        "SDET Remote",
+        "Database QA Remote",
+        "ETL Test Engineer Remote",
+        "Data Test Engineer Remote",
+        "ETL Tester Remote",
+        "Data QA Remote"
+    ]
+    for q in queries:
+        try:
+            df = scrape_jobs(
+                site_name=["linkedin"],
+                search_term=q,
+                location="India",
+                results_wanted=5
+            )
+            if df is not None and len(df) > 0:
+                for _, row in df.iterrows():
+                    job_url = str(row.get("job_url", "")).strip()
+                    title = str(row.get("title", "")).strip()
+                    company = str(row.get("company", "")).strip()
+                    loc = str(row.get("location", "Remote, India")).strip()
+                    desc = clean_html(str(row.get("description", "")))
+                    is_rem = bool(row.get("is_remote", True))
+                    if job_url:
+                        results.append({
+                            "id": f"jobspy-{hash(job_url)}",
+                            "source": "LinkedIn (JobSpy)",
+                            "title": title,
+                            "company": company,
+                            "location": loc,
+                            "url": job_url,
+                            "description": desc,
+                            "tags": ["LinkedIn", "JobSpy"],
+                            "date_posted": str(row.get("date_posted", "")),
+                            "is_remote": is_rem
+                        })
+        except Exception:
+            continue
+    return results
+
 def fetch_greenhouse_boards() -> list:
     results = []
+    remote_first_companies = ["gitlab", "elastic", "cockroach labs", "dbt labs", "starburst", "zapier", "automattic", "canonical", "grafana labs", "grafanalabs"]
     for board in GREENHOUSE_BOARDS:
         company_name = board["company"]
         slug = board["slug"]
@@ -156,6 +219,10 @@ def fetch_greenhouse_boards() -> list:
             for j in data["jobs"]:
                 loc_obj = j.get("location") or {}
                 location = loc_obj.get("name", "Remote") if isinstance(loc_obj, dict) else str(loc_obj)
+                
+                # Check if this company is 100% remote or job location mentions remote
+                is_rem = (company_name.lower() in remote_first_companies) or ("remote" in location.lower())
+                
                 results.append({
                     "id": f"greenhouse-{slug}-{j.get('id')}",
                     "source": f"{company_name} (Direct ATS)",
@@ -163,9 +230,10 @@ def fetch_greenhouse_boards() -> list:
                     "company": company_name,
                     "location": location,
                     "url": j.get("absolute_url", ""),
-                    "description": "",  # Detailed description can be fetched if title matches
+                    "description": "",
                     "tags": [],
-                    "date_posted": j.get("updated_at", "")
+                    "date_posted": j.get("updated_at", ""),
+                    "is_remote": is_rem
                 })
     return results
 
@@ -173,6 +241,8 @@ def scrape_and_match_all() -> list:
     """Scrapes all active sources, evaluates each job, and returns scored matching jobs."""
     raw_jobs = []
 
+    if API_SOURCES.get("jobspy"):
+        raw_jobs.extend(fetch_jobspy_remote())
     if API_SOURCES.get("remotive"):
         raw_jobs.extend(fetch_remotive())
     if API_SOURCES.get("remoteok"):
@@ -199,7 +269,9 @@ def scrape_and_match_all() -> list:
             title=j["title"],
             description=j["description"],
             location=j["location"],
-            tags=j["tags"]
+            tags=j["tags"],
+            is_remote=j.get("is_remote", False),
+            source=j.get("source", "")
         )
         if evaluation["eligible"]:
             j["match_score"] = evaluation["match_score"]
