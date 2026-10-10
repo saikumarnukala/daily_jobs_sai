@@ -22,43 +22,88 @@ if ENV_PATH.exists():
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 # Minimum score to trigger an alert (out of 100)
-MIN_SCORE_THRESHOLD = 45
+MIN_SCORE_THRESHOLD = 50
 
-# Candidate Profile Keywords (Weighted for Scoring)
+# Candidate Profile & Target Roles
 PROFILE = {
     "name": "Saikumar Nukala",
-    "target_titles": [
-        "etl", "data quality", "data test", "data qa", "dwh test", 
-        "qa automation", "sdet", "test engineer", "quality engineer", 
-        "data validation", "software test engineer", "bi test"
+    "target_roles": [
+        "ETL Test Engineer",
+        "Data Quality Engineer",
+        "SDET in Data",
+        "Software Test Engineer in Data",
+        "ETL Database Testing"
     ],
+    # High-Priority In-Scope Title Patterns
+    "in_scope_title_patterns": [
+        # 1. ETL Test Engineer / ETL QA
+        r'\b(etl\s*(?:test|testing|qa|tester|validation|engineer))\b',
+        # 2. Data Quality Engineer / Data Quality QA / Analyst
+        r'\b(data\s*quality\s*(?:engineer|analyst|qa|tester|specialist|lead))\b',
+        # 3. SDET in Data
+        r'\b(sdet\b.*?\b(?:data|pipeline|warehouse|platform|analytics|etl|sql|database))\b',
+        r'\b(?:data|pipeline|warehouse|platform)\b.*?\bsdet\b',
+        # 4. Software Test Engineer in Data / Data QA Engineer
+        r'\b(data\s*(?:qa|test|testing|validation)(?:\s*automation)?\s*(?:engineer|analyst|lead|specialist))\b',
+        r'\b(?:software\s*test|qa)\s*(?:engineer|analyst|lead|specialist)\b.*?\b(?:data|etl|database|warehouse|bi)\b',
+        # 5. ETL Database Testing / Database Test Engineer / SQL QA
+        r'\b(database\s*(?:test|testing|qa|tester|validation)\s*engineer)\b',
+        r'\b(sql\s*(?:test|testing|qa|tester)\s*engineer)\b',
+        r'\b(etl\s*(?:&|and)?\s*database\s*(?:test|testing|qa))\b'
+    ],
+    # Secondary Titles (Requires Data Testing Scope in Job Description)
+    "secondary_title_patterns": [
+        r'\b(sdet|qa\s*automation\s*engineer|test\s*automation\s*engineer|software\s*test\s*engineer|qa\s*engineer|quality\s*engineer|test\s*engineer)\b',
+        r'\b(data\s*engineer|data\s*analyst|analytics\s*engineer|bi\s*engineer)\b'
+    ],
+    # Must-have core skills
     "must_have_skills": {
-        "etl": 15,
-        "data quality": 15,
-        "sql": 12,
+        "etl": 20,
+        "data quality": 20,
+        "data validation": 18,
+        "database testing": 18,
+        "source to target": 15,
+        "data warehouse": 12,
+        "dwh": 12,
+        "sql": 15,
+        "database": 8,
         "python": 12,
-        "data validation": 12,
-        "data warehouse": 10,
-        "dwh": 10,
         "test automation": 10,
+        "sdet": 12,
+        "informatica": 10,
+        "snowflake": 10,
+        "aws": 7,
         "api testing": 8,
         "postman": 8,
-        "selenium": 8,
-        "cucumber": 8,
-        "snowflake": 8,
-        "aws": 7,
-        "informatica": 10,
-        "jenkins": 6,
-        "power bi": 7,
+        "selenium": 6,
+        "cucumber": 6,
+        "migration": 8,
+        "reconciliation": 10,
+        "power bi": 6,
         "spotfire": 6,
-        "jira": 4,
-        "regression": 6,
-        "database": 5
+        "jenkins": 6,
+        "jira": 4
     },
-    # Locations acceptable (Saikumar is in India, available for IST, UK/EU mornings, US East evenings)
-    "location_preferences": {
-        "preferred": ["india", "remote", "worldwide", "anywhere", "apac", "emea", "global"],
-        "restricted": ["us only", "usa only", "only us", "must reside in the us", "canada only", "germany only", "uk only"]
+    # Location Filter: Must be workable remotely from India (India remote or Worldwide/Anywhere remote)
+    # No timing/shift issues.
+    "location_rules": {
+        "india_indicators": [
+            "india", "bengaluru", "bangalore", "hyderabad", "pune", 
+            "chennai", "mumbai", "delhi", "noida", "gurgaon"
+        ],
+        "worldwide_indicators": [
+            "worldwide", "anywhere", "work from anywhere", "global", 
+            "everywhere", "remote - worldwide", "remote (worldwide)", "open remote"
+        ],
+        "foreign_restricted": [
+            "usa", "united states", "us only", "only us", "u.s.", "canada", 
+            "europe", "eu only", "uk only", "united kingdom", "germany", "france", 
+            "spain", "italy", "netherlands", "slovakia", "poland", "latam", 
+            "latin america", "brazil", "australia", "japan", "california", 
+            "new york", "texas", "los angeles", "dallas", "toronto", "london",
+            "berlin", "paris", "lisboa", "portugal", "austria", "wien", "mexico",
+            "ireland", "dublin", "singapore", "kuala lumpur", "malaysia", "msida"
+        ]
     }
 }
 
