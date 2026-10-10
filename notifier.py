@@ -29,7 +29,8 @@ def send_email_alert(jobs: list, recipient: str = None) -> bool:
     if not sender or not password:
         return False
 
-    subject = f"🎯 Job Alert: {len(jobs)} New ETL & Data Quality QA Matches"
+    now_time = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    subject = f"🎯 Job Alert [{now_time}]: {len(jobs)} New In-Scope Matches"
     
     items_html = ""
     for j in jobs[:10]:
