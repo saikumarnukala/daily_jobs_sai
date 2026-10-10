@@ -93,6 +93,9 @@ def send_email_alert(jobs: list, recipient: str = None) -> bool:
                 print(f"Email alert error: {e}")
                 return False
         return sent
+    except Exception as e:
+        print(f"Email alert error: {e}")
+        return False
 
 
 def send_telegram_alert(jobs: list) -> bool:
