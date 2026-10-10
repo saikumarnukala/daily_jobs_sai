@@ -109,8 +109,14 @@ PROFILE = {
 
 # Remote-First Company Greenhouse Boards (from awesome-remote-job)
 GREENHOUSE_BOARDS = [
+    {"company": "Fivetran", "slug": "fivetran"},
+    {"company": "Okta", "slug": "okta"},
     {"company": "GitLab", "slug": "gitlab"},
     {"company": "Elastic", "slug": "elastic"},
+    {"company": "Cockroach Labs", "slug": "cockroachlabs"},
+    {"company": "dbt Labs", "slug": "dbtlabs"},
+    {"company": "Starburst", "slug": "starburst"},
+    {"company": "MongoDB", "slug": "mongodb"},
 ]
 
 # Remote Job Board APIs
