@@ -70,14 +70,29 @@ def send_email_alert(jobs: list, recipient: str = None) -> bool:
         msg["To"] = recipient
         msg.attach(MIMEText(html_body, "html"))
 
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
-            server.starttls()
-            server.login(sender, password)
-            server.sendmail(sender, [recipient], msg.as_string())
-        return True
-    except Exception as e:
-        print(f"Email alert error: {e}")
-        return False
+        sent = False
+        try:
+            with smtplib.SMTP(smtp_server, 587, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(sender, password)
+                server.sendmail(sender, [recipient], msg.as_string())
+            sent = True
+        except Exception:
+            pass
+
+        if not sent:
+            try:
+                ssl_ctx = ssl.create_default_context()
+                with smtplib.SMTP_SSL(smtp_server, 465, context=ssl_ctx, timeout=15) as server:
+                    server.login(sender, password)
+                    server.sendmail(sender, [recipient], msg.as_string())
+                sent = True
+            except Exception as e:
+                print(f"Email alert error: {e}")
+                return False
+        return sent
 
 
 def send_telegram_alert(jobs: list) -> bool:
