@@ -2,6 +2,7 @@
 Configuration settings for the Automated Job Scraper & Alert System.
 Tuned for Saikumar Nukala - ETL / Data Quality Test Engineer.
 """
+import os
 from pathlib import Path
 
 # Paths
@@ -9,6 +10,16 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "jobs.db"
 DIGEST_HTML_PATH = BASE_DIR / "job_digest.html"
 RESUME_PDF_PATH = BASE_DIR / "Saikumar_Nukala_ETL_Data_Quality_Test_Engineer.pdf"
+
+# Load local .env if present
+ENV_PATH = BASE_DIR / ".env"
+if ENV_PATH.exists():
+    with open(ENV_PATH, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 # Minimum score to trigger an alert (out of 100)
 MIN_SCORE_THRESHOLD = 45
@@ -73,15 +84,15 @@ NOTIFICATIONS = {
     "email_recipient": "saikumar.kumar.qa@gmail.com",
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
-    "smtp_sender": "",    # e.g. your Gmail address (or set via GMAIL_USER env var)
-    "smtp_password": "",  # 16-character Gmail App Password (or set via GMAIL_APP_PASSWORD env var)
+    "smtp_sender": os.environ.get("GMAIL_USER", "saikumar.kumar.qa@gmail.com"),
+    "smtp_password": os.environ.get("GMAIL_APP_PASSWORD", ""),
 
     # Discord Webhook URL (optional)
-    "discord_webhook_url": "",
+    "discord_webhook_url": os.environ.get("DISCORD_WEBHOOK_URL", ""),
 
     # Telegram Bot Token & Chat ID (optional)
-    "telegram_bot_token": "",
-    "telegram_chat_id": "",
+    "telegram_bot_token": os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+    "telegram_chat_id": os.environ.get("TELEGRAM_CHAT_ID", ""),
 
     # Generate HTML digest file on every run
     "generate_html_digest": True,
