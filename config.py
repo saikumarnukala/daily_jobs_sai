@@ -81,10 +81,10 @@ API_SOURCES = {
 # Leave empty or fill in to enable instant push notifications
 NOTIFICATIONS = {
     # Email Alert Settings
-    "email_recipient": "saikumar.kumar.qa@gmail.com",
+    "email_recipient": os.environ.get("EMAIL_RECIPIENT", "saikumar.kumar.qa@gmail.com"),
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
-    "smtp_sender": os.environ.get("GMAIL_USER", "saikumar.kumar.qa@gmail.com"),
+    "smtp_sender": os.environ.get("GMAIL_USER", "saikumar.nukala.qa@gmail.com"),
     "smtp_password": os.environ.get("GMAIL_APP_PASSWORD", ""),
 
     # Discord Webhook URL (optional)
